@@ -1,0 +1,64 @@
+@import "tailwindcss";
+
+@theme {
+  --color-navy: #0f1f3d;
+  --color-navy-mid: #1a3060;
+  --color-gold: #c9a84c;
+  --color-gold-light: #e8d08a;
+  --color-cream: #f9f6f0;
+  --color-warm-gray: #e8e3da;
+  --font-sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-serif: 'Cormorant Garamond', ui-serif, Georgia, serif;
+}
+
+@layer base {
+  body {
+    @apply bg-cream text-slate-900;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors cursor-pointer;
+  }
+  .btn-primary {
+    @apply bg-navy text-white hover:bg-navy-mid;
+  }
+  .btn-secondary {
+    @apply border-2 border-warm-gray bg-white text-navy hover:border-navy hover:bg-cream;
+  }
+  .btn-gold {
+    @apply bg-gold text-navy font-semibold hover:bg-gold-light;
+  }
+  .btn-danger {
+    @apply bg-red-600 text-white hover:bg-red-700;
+  }
+  .card {
+    @apply rounded-xl border border-warm-gray bg-white p-6 shadow-sm mb-5;
+  }
+  .card-title {
+    @apply mb-4 flex items-center gap-3 font-serif text-lg font-semibold text-navy;
+  }
+  .ct-icon {
+    @apply flex h-8 w-8 items-center justify-center rounded-lg bg-cream text-navy;
+  }
+  .form-label {
+    @apply mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500;
+  }
+  .form-label.required::after {
+    content: ' *';
+    @apply text-red-500;
+  }
+  .form-input, .form-select, .form-textarea {
+    @apply w-full rounded-lg border-2 border-warm-gray bg-cream px-3.5 py-2.5 text-sm text-slate-900 outline-none transition-colors focus:border-navy focus:bg-white;
+  }
+  .section-divider {
+    @apply my-6 flex items-center gap-3;
+  }
+  .section-divider-title {
+    @apply whitespace-nowrap font-serif text-base font-semibold text-navy;
+  }
+  .section-divider-line {
+    @apply h-px flex-1 bg-warm-gray;
+  }
+}
