@@ -76,8 +76,10 @@ export default function Mandato({ studio, currentClienteId, state, setView }: { 
         const { saveGeneratedDocument } = await import('../utils/fs');
         const c = state?.clienti.find(c => c.id === currentClienteId);
         const numCliente = c?.numeroCliente || '00000';
-        await saveGeneratedDocument(numCliente, 'Mandato_Professionale', 'print-mandato');
-        alert('Mandato salvato con successo nel fascicolo e nella cartella locale!');
+        const success = await saveGeneratedDocument(numCliente, 'Mandato_Professionale', 'print-mandato');
+        if (success) {
+          alert('Mandato salvato con successo nel fascicolo e nella cartella locale!');
+        }
       } catch (err) {
         console.error(err);
         alert('Dati salvati, ma impossibile generare il file PDF nella cartella locale.');

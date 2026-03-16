@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BarChart, Building2, AlertTriangle, Lock, Info } from 'lucide-react';
+import { BarChart, Building2, AlertTriangle, Lock, Info, Printer, Save } from 'lucide-react';
 
 const factorTooltips: Record<string, Record<number, string>> = {
   "Tipologia clientela": {
@@ -80,12 +80,29 @@ export default function Autovalutazione() {
     else { verdict = 'ALTO'; color = 'var(--color-red-600)'; }
   }
 
+  const handleSave = async () => {
+    try {
+      const { saveGeneratedDocument } = await import('../utils/fs');
+      const success = await saveGeneratedDocument(null, 'Autovalutazione_Rischio_Studio', 'print-autovalutazione');
+      if (success) {
+        alert('Autovalutazione salvata con successo nella cartella di lavoro locale!');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Impossibile generare il file PDF nella cartella locale.');
+    }
+  };
+
   return (
-    <div className="animate-in fade-in duration-300">
-      <div className="mb-7 flex items-start justify-between border-b-2 border-warm-gray pb-5">
+    <div className="animate-in fade-in duration-300 print:m-0 print:p-0" id="print-autovalutazione">
+      <div className="mb-7 flex items-start justify-between border-b-2 border-warm-gray pb-5 print:hidden">
         <div>
           <h2 className="font-serif text-3xl font-semibold text-navy">Autovalutazione del Rischio Studio</h2>
           <p className="mt-1.5 text-sm text-slate-500">Artt. 15 e 16, D.Lgs. 231/2007 — Valutazione rischio inerente e vulnerabilità</p>
+        </div>
+        <div className="flex gap-2">
+          <button className="btn btn-secondary" onClick={() => window.print()}><Printer size={16} /> Stampa</button>
+          <button className="btn btn-gold" onClick={handleSave}><Save size={16} /> Salva PDF</button>
         </div>
       </div>
 

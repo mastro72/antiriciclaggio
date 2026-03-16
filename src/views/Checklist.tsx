@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { CheckSquare, Printer } from 'lucide-react';
+import { CheckSquare, Printer, Save } from 'lucide-react';
 
 export default function Checklist() {
   const sections = [
@@ -53,14 +53,30 @@ export default function Checklist() {
     localStorage.setItem('checklist_state', JSON.stringify(newChecks));
   };
 
+  const handleSave = async () => {
+    try {
+      const { saveGeneratedDocument } = await import('../utils/fs');
+      const success = await saveGeneratedDocument(null, 'Checklist_Adempimenti_Studio', 'print-checklist');
+      if (success) {
+        alert('Checklist salvata con successo nella cartella di lavoro locale!');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Impossibile generare il file PDF nella cartella locale.');
+    }
+  };
+
   return (
-    <div className="animate-in fade-in duration-300">
-      <div className="mb-7 flex items-start justify-between border-b-2 border-warm-gray pb-5">
+    <div className="animate-in fade-in duration-300 print:m-0 print:p-0" id="print-checklist">
+      <div className="mb-7 flex items-start justify-between border-b-2 border-warm-gray pb-5 print:hidden">
         <div>
           <h2 className="font-serif text-3xl font-semibold text-navy">Check List Adempimenti Studio</h2>
           <p className="mt-1.5 text-sm text-slate-500">Verifica adempimenti Intermediario Fiscale, Privacy e Antiriciclaggio</p>
         </div>
-        <button className="btn btn-secondary" onClick={() => window.print()}><Printer size={16} /> Esporta</button>
+        <div className="flex gap-2">
+          <button className="btn btn-secondary" onClick={() => window.print()}><Printer size={16} /> Stampa</button>
+          <button className="btn btn-gold" onClick={handleSave}><Save size={16} /> Salva PDF</button>
+        </div>
       </div>
 
       {sections.map((sec, si) => (

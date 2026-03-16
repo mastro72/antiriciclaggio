@@ -97,8 +97,10 @@ export default function Valutazione2025({ state, currentClienteId, setView }: { 
         const cliente = state.clienti.find(c => c.id === selectedCliente);
         if (cliente && cliente.numeroCliente) {
           const { saveGeneratedDocument } = await import('../utils/fs');
-          await saveGeneratedDocument(cliente.numeroCliente, 'Valutazione_Rischio', 'print-valutazione');
-          alert('Valutazione salvata con successo nel fascicolo e nella cartella locale!');
+          const success = await saveGeneratedDocument(cliente.numeroCliente, 'Valutazione_Rischio', 'print-valutazione');
+          if (success) {
+            alert('Valutazione salvata con successo nel fascicolo e nella cartella locale!');
+          }
         } else {
           alert('Valutazione salvata nel fascicolo (impossibile salvare in locale: numero cliente mancante).');
         }

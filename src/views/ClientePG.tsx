@@ -57,8 +57,10 @@ export default function ClientePG({ addCliente, setView, studio, currentClienteI
     
     try {
       const { saveGeneratedDocument } = await import('../utils/fs');
-      await saveGeneratedDocument(formData.numeroCliente, 'Scheda_Identificazione', 'print-scheda-pg');
-      alert('Scheda Identificazione salvata con successo nel fascicolo e nella cartella locale!');
+      const success = await saveGeneratedDocument(formData.numeroCliente, 'Scheda_Identificazione', 'print-scheda-pg');
+      if (success) {
+        alert('Scheda Identificazione salvata con successo nel fascicolo e nella cartella locale!');
+      }
     } catch (err) {
       console.error(err);
       alert('Dati salvati, ma impossibile generare il file PDF nella cartella locale.');

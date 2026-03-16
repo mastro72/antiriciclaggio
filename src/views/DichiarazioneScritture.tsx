@@ -65,8 +65,10 @@ export default function DichiarazioneScritture({ studio, currentClienteId, state
         const { saveGeneratedDocument } = await import('../utils/fs');
         const c = state?.clienti.find(c => c.id === currentClienteId);
         const numCliente = c?.numeroCliente || '00000';
-        await saveGeneratedDocument(numCliente, 'Dichiarazione_Tenuta_Scritture', 'print-scritture');
-        alert('Dichiarazione salvata con successo nel fascicolo e nella cartella locale!');
+        const success = await saveGeneratedDocument(numCliente, 'Dichiarazione_Tenuta_Scritture', 'print-scritture');
+        if (success) {
+          alert('Dichiarazione salvata con successo nel fascicolo e nella cartella locale!');
+        }
       } catch (err) {
         console.error(err);
         alert('Dati salvati, ma impossibile generare il file PDF nella cartella locale.');
