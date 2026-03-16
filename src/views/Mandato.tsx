@@ -68,10 +68,20 @@ export default function Mandato({ studio, currentClienteId, state, setView }: { 
     setFormData({ ...formData, servizi: { ...formData.servizi, [key]: !formData.servizi[key] } });
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (currentClienteId) {
       localStorage.setItem(`mandato_${currentClienteId}`, JSON.stringify(formData));
-      alert('Mandato salvato con successo nel fascicolo!');
+      
+      try {
+        const { saveGeneratedDocument } = await import('../utils/fs');
+        const c = state?.clienti.find(c => c.id === currentClienteId);
+        const numCliente = c?.numeroCliente || '00000';
+        await saveGeneratedDocument(numCliente, 'Mandato_Professionale', 'print-mandato');
+        alert('Mandato salvato con successo nel fascicolo e nella cartella locale!');
+      } catch (err) {
+        console.error(err);
+        alert('Dati salvati, ma impossibile generare il file PDF nella cartella locale.');
+      }
     } else {
       alert('Mandato generato. (Nota: per salvare nel fascicolo, genera il mandato partendo dal Fascicolo Cliente)');
     }
@@ -153,7 +163,7 @@ export default function Mandato({ studio, currentClienteId, state, setView }: { 
       </div>
 
       {/* Print Preview Area */}
-      <div className={`bg-white p-8 shadow-lg print:shadow-none print:p-0 ${preview ? 'block' : 'hidden print:block'}`}>
+      <div id="print-mandato" className={`bg-white p-8 shadow-lg print:shadow-none print:p-0 ${preview ? 'block' : 'hidden print:block'}`}>
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold uppercase mb-4">MANDATO PROFESSIONALE</h1>
         </div>

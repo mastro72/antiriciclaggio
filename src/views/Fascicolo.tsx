@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { FolderOpen, FileText, User, Shield, BookOpen, AlertCircle, Upload, Download, Trash2, HardDrive } from 'lucide-react';
 import { AppState } from '../store';
 import { set, get, del } from 'idb-keyval';
@@ -122,11 +122,15 @@ export default function Fascicolo({ state, currentClienteId, setView }: { state:
     const ext = file.name.split('.').pop() || '';
     const safeLabel = items[i].label.replace(/[^a-z0-9]/gi, '_').toLowerCase();
     const numCliente = cliente.numeroCliente || 'NOCLIENTNUM';
+    const numClientePadded = String(cliente.numeroCliente || 0).padStart(5, '0');
     const fileName = `${numCliente}_${safeLabel}.${ext}`;
     
     try {
-      // Write to local file system
-      const fileHandle = await dirHandle.getFileHandle(fileName, { create: true });
+      // Get or create client subfolder
+      const clientDirHandle = await dirHandle.getDirectoryHandle(numClientePadded, { create: true });
+      
+      // Write to local file system in the subfolder
+      const fileHandle = await clientDirHandle.getFileHandle(fileName, { create: true });
       const writable = await fileHandle.createWritable();
       await writable.write(file);
       await writable.close();
@@ -163,7 +167,9 @@ export default function Fascicolo({ state, currentClienteId, setView }: { state:
     if (!fileData) return;
     
     try {
-      const fileHandle = await dirHandle.getFileHandle(fileData.name);
+      const numClientePadded = String(cliente.numeroCliente || 0).padStart(5, '0');
+      const clientDirHandle = await dirHandle.getDirectoryHandle(numClientePadded, { create: false });
+      const fileHandle = await clientDirHandle.getFileHandle(fileData.name);
       const file = await fileHandle.getFile();
       
       const url = URL.createObjectURL(file);
@@ -183,7 +189,7 @@ export default function Fascicolo({ state, currentClienteId, setView }: { state:
 
   const handleFileDelete = async (i: number, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!currentClienteId || !dirHandle) return;
+    if (!currentClienteId || !dirHandle || !cliente) return;
     
     if (confirm('Sei sicuro di voler eliminare questo file dalla cartella locale?')) {
       const hasPermission = await verifyPermission(dirHandle);
@@ -192,7 +198,9 @@ export default function Fascicolo({ state, currentClienteId, setView }: { state:
       const fileData = await get(`file_${currentClienteId}_${i}`);
       if (fileData) {
         try {
-          await dirHandle.removeEntry(fileData.name);
+          const numClientePadded = String(cliente.numeroCliente || 0).padStart(5, '0');
+          const clientDirHandle = await dirHandle.getDirectoryHandle(numClientePadded, { create: false });
+          await clientDirHandle.removeEntry(fileData.name);
         } catch (err) {
           console.error("Error deleting file from local folder", err);
           // Continue to delete metadata even if file is already gone

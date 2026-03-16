@@ -89,10 +89,23 @@ export default function Valutazione2025({ state, currentClienteId, setView }: { 
     setVVals(newV);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (selectedCliente) {
       localStorage.setItem(`valutazione_${selectedCliente}`, JSON.stringify({ rVals, vVals }));
-      alert('Valutazione salvata con successo nel fascicolo!');
+      
+      try {
+        const cliente = state.clienti.find(c => c.id === selectedCliente);
+        if (cliente && cliente.numeroCliente) {
+          const { saveGeneratedDocument } = await import('../utils/fs');
+          await saveGeneratedDocument(cliente.numeroCliente, 'Valutazione_Rischio', 'print-valutazione');
+          alert('Valutazione salvata con successo nel fascicolo e nella cartella locale!');
+        } else {
+          alert('Valutazione salvata nel fascicolo (impossibile salvare in locale: numero cliente mancante).');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Dati salvati, ma impossibile generare il file PDF nella cartella locale.');
+      }
     } else {
       alert('Seleziona un cliente per salvare la valutazione.');
     }
@@ -126,67 +139,69 @@ export default function Valutazione2025({ state, currentClienteId, setView }: { 
         </div>
       </div>
 
-      <div className="card print:hidden">
-        <div className="card-title"><div className="ct-icon"><Building2 size={18} /></div> Intestazione</div>
-        <div className="grid grid-cols-2 gap-4">
+      <div id="print-valutazione">
+        <div className="card print:hidden">
+          <div className="card-title"><div className="ct-icon"><Building2 size={18} /></div> Intestazione</div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="form-label">Cliente</label>
+              <select className="form-select" value={selectedCliente} onChange={(e) => setSelectedCliente(e.target.value)}>
+                <option value="">— Seleziona Cliente —</option>
+                {state.clienti.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Print Header */}
+        <div className="hidden print:block mb-8 text-center">
+          <h1 className="text-2xl font-bold uppercase mb-2">Scheda di Valutazione del Rischio</h1>
+          <p className="text-lg">Cliente: <strong>{state.clienti.find(c => c.id === selectedCliente)?.nome || '_______________________'}</strong></p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
           <div>
-            <label className="form-label">Cliente</label>
-            <select className="form-select" value={selectedCliente} onChange={(e) => setSelectedCliente(e.target.value)}>
-              <option value="">— Seleziona Cliente —</option>
-              {state.clienti.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
-            </select>
-          </div>
-        </div>
-      </div>
+            <div className="card">
+              <div className="card-title"><div className="ct-icon"><AlertTriangle size={18} /></div> I — Fattori di Rischio Inerente</div>
+              <RiskFactor label="Tipologia della clientela" val={rVals[0]} onChange={(v: number) => setR(0, v)} />
+              <RiskFactor label="Area geografica di operatività" val={rVals[1]} onChange={(v: number) => setR(1, v)} />
+              <RiskFactor label="Canali distributivi" val={rVals[2]} onChange={(v: number) => setR(2, v)} />
+              <RiskFactor label="Servizi professionali offerti" val={rVals[3]} onChange={(v: number) => setR(3, v)} />
+              <div className="mt-4 flex items-center justify-between rounded-xl bg-navy p-4 text-white print:bg-gray-200 print:text-black">
+                <span className="text-sm">Media aritmetica — Rischio Inerente (A)</span>
+                <span className="font-serif text-3xl font-bold text-gold print:text-black">{a.toFixed(2)}</span>
+              </div>
+            </div>
 
-      {/* Print Header */}
-      <div className="hidden print:block mb-8 text-center">
-        <h1 className="text-2xl font-bold uppercase mb-2">Scheda di Valutazione del Rischio</h1>
-        <p className="text-lg">Cliente: <strong>{state.clienti.find(c => c.id === selectedCliente)?.nome || '_______________________'}</strong></p>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
-        <div>
-          <div className="card">
-            <div className="card-title"><div className="ct-icon"><AlertTriangle size={18} /></div> I — Fattori di Rischio Inerente</div>
-            <RiskFactor label="Tipologia della clientela" val={rVals[0]} onChange={(v: number) => setR(0, v)} />
-            <RiskFactor label="Area geografica di operatività" val={rVals[1]} onChange={(v: number) => setR(1, v)} />
-            <RiskFactor label="Canali distributivi" val={rVals[2]} onChange={(v: number) => setR(2, v)} />
-            <RiskFactor label="Servizi professionali offerti" val={rVals[3]} onChange={(v: number) => setR(3, v)} />
-            <div className="mt-4 flex items-center justify-between rounded-xl bg-navy p-4 text-white print:bg-gray-200 print:text-black">
-              <span className="text-sm">Media aritmetica — Rischio Inerente (A)</span>
-              <span className="font-serif text-3xl font-bold text-gold print:text-black">{a.toFixed(2)}</span>
+            <div className="card">
+              <div className="card-title"><div className="ct-icon"><ClipboardList size={18} /></div> II — Fattori di Vulnerabilità</div>
+              <RiskFactor label="Formazione" val={vVals[0]} onChange={(v: number) => setV(0, v)} />
+              <RiskFactor label="Organizzazione adempimenti adeguata verifica" val={vVals[1]} onChange={(v: number) => setV(1, v)} />
+              <RiskFactor label="Conservazione documenti, dati e informazioni" val={vVals[2]} onChange={(v: number) => setV(2, v)} />
+              <RiskFactor label="Segnalazione operazioni sospette (SOS)" val={vVals[3]} onChange={(v: number) => setV(3, v)} />
+              <div className="mt-4 flex items-center justify-between rounded-xl bg-navy p-4 text-white print:bg-gray-200 print:text-black">
+                <span className="text-sm">Media aritmetica — Vulnerabilità (B)</span>
+                <span className="font-serif text-3xl font-bold text-gold print:text-black">{b.toFixed(2)}</span>
+              </div>
             </div>
           </div>
 
-          <div className="card">
-            <div className="card-title"><div className="ct-icon"><ClipboardList size={18} /></div> II — Fattori di Vulnerabilità</div>
-            <RiskFactor label="Formazione" val={vVals[0]} onChange={(v: number) => setV(0, v)} />
-            <RiskFactor label="Organizzazione adempimenti adeguata verifica" val={vVals[1]} onChange={(v: number) => setV(1, v)} />
-            <RiskFactor label="Conservazione documenti, dati e informazioni" val={vVals[2]} onChange={(v: number) => setV(2, v)} />
-            <RiskFactor label="Segnalazione operazioni sospette (SOS)" val={vVals[3]} onChange={(v: number) => setV(3, v)} />
-            <div className="mt-4 flex items-center justify-between rounded-xl bg-navy p-4 text-white print:bg-gray-200 print:text-black">
-              <span className="text-sm">Media aritmetica — Vulnerabilità (B)</span>
-              <span className="font-serif text-3xl font-bold text-gold print:text-black">{b.toFixed(2)}</span>
+          <div className="space-y-4">
+            <div className="rounded-xl bg-navy p-6 text-center text-white print:bg-white print:text-black print:border-2 print:border-black">
+              <div className="mb-2 text-xs tracking-widest text-white/60 print:text-black">RISCHIO RESIDUO</div>
+              <div className="font-serif text-6xl font-bold text-gold print:text-black">{residuo > 0 ? residuo.toFixed(2) : '—'}</div>
+              <div className="mt-4 inline-block rounded-full px-4 py-2 text-sm font-semibold print:border print:border-black" style={{ backgroundColor: color }}>
+                {residuo > 0 ? `Verifica ${verdict}` : '—'}
+              </div>
             </div>
-          </div>
-        </div>
 
-        <div className="space-y-4">
-          <div className="rounded-xl bg-navy p-6 text-center text-white print:bg-white print:text-black print:border-2 print:border-black">
-            <div className="mb-2 text-xs tracking-widest text-white/60 print:text-black">RISCHIO RESIDUO</div>
-            <div className="font-serif text-6xl font-bold text-gold print:text-black">{residuo > 0 ? residuo.toFixed(2) : '—'}</div>
-            <div className="mt-4 inline-block rounded-full px-4 py-2 text-sm font-semibold print:border print:border-black" style={{ backgroundColor: color }}>
-              {residuo > 0 ? `Verifica ${verdict}` : '—'}
-            </div>
-          </div>
-
-          <div className="card !p-5 print:hidden">
-            <div className="mb-3 text-xs font-semibold text-slate-500">ADEGUATA VERIFICA</div>
-            <div className="space-y-2 text-xs">
-              <div className="rounded-md bg-cream p-2"><strong>Semplificata</strong> (≤1.5): misure ridotte</div>
-              <div className="rounded-md bg-cream p-2"><strong>Ordinaria</strong> (1.5-2.5): verifica standard</div>
-              <div className="rounded-md bg-yellow-100 p-2"><strong>Rafforzata</strong> (&gt;2.5): misure potenziate</div>
+            <div className="card !p-5 print:hidden">
+              <div className="mb-3 text-xs font-semibold text-slate-500">ADEGUATA VERIFICA</div>
+              <div className="space-y-2 text-xs">
+                <div className="rounded-md bg-cream p-2"><strong>Semplificata</strong> (≤1.5): misure ridotte</div>
+                <div className="rounded-md bg-cream p-2"><strong>Ordinaria</strong> (1.5-2.5): verifica standard</div>
+                <div className="rounded-md bg-yellow-100 p-2"><strong>Rafforzata</strong> (&gt;2.5): misure potenziate</div>
+              </div>
             </div>
           </div>
         </div>

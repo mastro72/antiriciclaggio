@@ -30,10 +30,20 @@ export default function Privacy({ studio, currentClienteId, state, setView }: { 
   const handleChange = (e: any) => setFormData({ ...formData, [e.target.name]: e.target.value });
   const toggleConsenso = (key: 'consensoMarketing' | 'consensoTerzi') => setFormData({ ...formData, [key]: !formData[key] });
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (currentClienteId) {
       localStorage.setItem(`privacy_${currentClienteId}`, JSON.stringify(formData));
-      alert('Informativa Privacy salvata con successo nel fascicolo!');
+      
+      try {
+        const { saveGeneratedDocument } = await import('../utils/fs');
+        const c = state?.clienti.find(c => c.id === currentClienteId);
+        const numCliente = c?.numeroCliente || '00000';
+        await saveGeneratedDocument(numCliente, 'Informativa_Privacy', 'print-privacy');
+        alert('Informativa Privacy salvata con successo nel fascicolo e nella cartella locale!');
+      } catch (err) {
+        console.error(err);
+        alert('Dati salvati, ma impossibile generare il file PDF nella cartella locale.');
+      }
     } else {
       alert('Informativa generata. (Nota: per salvare nel fascicolo, genera il documento partendo dal Fascicolo Cliente)');
     }
@@ -92,7 +102,7 @@ export default function Privacy({ studio, currentClienteId, state, setView }: { 
       </div>
 
       {/* Print View */}
-      <div className="hidden print:block font-serif text-[11px] leading-snug max-w-4xl mx-auto">
+      <div id="print-privacy" className="hidden print:block font-serif text-[11px] leading-snug max-w-4xl mx-auto bg-white p-8">
         <div className="text-center mb-6">
           <h1 className="text-lg font-bold uppercase">INFORMATIVA SUL TRATTAMENTO DEI DATI PERSONALI</h1>
           <p className="text-sm">(Art. 13 Regolamento UE 2016/679 - GDPR)</p>

@@ -67,7 +67,7 @@ export default function ClientePF({ addCliente, setView, studio, currentClienteI
     setFormData({ ...formData, [category]: { ...formData[category], [field]: value } });
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formData.nome) return alert('Inserire il nome del cliente');
     
     let clienteId = currentClienteId;
@@ -90,7 +90,16 @@ export default function ClientePF({ addCliente, setView, studio, currentClienteI
     }
     
     localStorage.setItem(`cliente_pf_${clienteId}`, JSON.stringify(formData));
-    alert('Scheda Identificazione salvata con successo!');
+    
+    try {
+      const { saveGeneratedDocument } = await import('../utils/fs');
+      await saveGeneratedDocument(formData.numeroCliente, 'Scheda_Identificazione', 'print-scheda-pf');
+      alert('Scheda Identificazione salvata con successo nel fascicolo e nella cartella locale!');
+    } catch (err) {
+      console.error(err);
+      alert('Dati salvati, ma impossibile generare il file PDF nella cartella locale.');
+    }
+    
     setView('fascicolo');
   };
 
@@ -195,7 +204,7 @@ export default function ClientePF({ addCliente, setView, studio, currentClienteI
       </div>
 
       {/* Print Preview Area */}
-      <div className={`bg-white p-8 shadow-lg print:shadow-none print:p-0 ${preview ? 'block' : 'hidden print:block'}`}>
+      <div id="print-scheda-pf" className={`bg-white p-8 shadow-lg print:shadow-none print:p-0 ${preview ? 'block' : 'hidden print:block'}`}>
         <div className="text-center mb-6">
           <h1 className="text-xl font-bold text-red-600 uppercase">SCHEDA PER L'IDENTIFICAZIONE DEL CLIENTE PER FINI ANTIRICICLAGGIO</h1>
         </div>

@@ -57,10 +57,20 @@ export default function DichiarazioneScritture({ studio, currentClienteId, state
   const toggleDepositate = (key: keyof typeof formData.depositate) => 
     setFormData({ ...formData, depositate: { ...formData.depositate, [key]: !formData.depositate[key] } });
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (currentClienteId) {
       localStorage.setItem(`scritture_${currentClienteId}`, JSON.stringify(formData));
-      alert('Dichiarazione salvata con successo nel fascicolo!');
+      
+      try {
+        const { saveGeneratedDocument } = await import('../utils/fs');
+        const c = state?.clienti.find(c => c.id === currentClienteId);
+        const numCliente = c?.numeroCliente || '00000';
+        await saveGeneratedDocument(numCliente, 'Dichiarazione_Tenuta_Scritture', 'print-scritture');
+        alert('Dichiarazione salvata con successo nel fascicolo e nella cartella locale!');
+      } catch (err) {
+        console.error(err);
+        alert('Dati salvati, ma impossibile generare il file PDF nella cartella locale.');
+      }
     } else {
       alert('Dichiarazione generata. (Nota: per salvare nel fascicolo, genera il documento partendo dal Fascicolo Cliente)');
     }
@@ -152,7 +162,7 @@ export default function DichiarazioneScritture({ studio, currentClienteId, state
       </div>
 
       {/* Print Preview Area */}
-      <div className={`bg-white p-8 shadow-lg print:shadow-none print:p-0 ${preview ? 'block' : 'hidden print:block'}`}>
+      <div id="print-scritture" className={`bg-white p-8 shadow-lg print:shadow-none print:p-0 ${preview ? 'block' : 'hidden print:block'}`}>
         <div className="text-center mb-6">
           <h1 className="text-xl font-bold uppercase">{studio.denominazione || 'STUDIO NOVANZI SRL'}</h1>
           <p className="text-sm">AMMINISTRAZIONE E CONSULENZA AZIENDALE</p>

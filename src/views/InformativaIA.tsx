@@ -29,10 +29,20 @@ export default function InformativaIA({ studio, currentClienteId, state, setView
 
   const handleChange = (e: any) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (currentClienteId) {
       localStorage.setItem(`ia_${currentClienteId}`, JSON.stringify(formData));
-      alert('Informativa IA salvata con successo nel fascicolo!');
+      
+      try {
+        const { saveGeneratedDocument } = await import('../utils/fs');
+        const c = state?.clienti.find(c => c.id === currentClienteId);
+        const numCliente = c?.numeroCliente || '00000';
+        await saveGeneratedDocument(numCliente, 'Informativa_IA', 'print-ia');
+        alert('Informativa IA salvata con successo nel fascicolo e nella cartella locale!');
+      } catch (err) {
+        console.error(err);
+        alert('Dati salvati, ma impossibile generare il file PDF nella cartella locale.');
+      }
     } else {
       alert('Informativa generata. (Nota: per salvare nel fascicolo, genera il documento partendo dal Fascicolo Cliente)');
     }
@@ -103,7 +113,7 @@ export default function InformativaIA({ studio, currentClienteId, state, setView
       </div>
 
       {/* Print View */}
-      <div className="hidden print:block font-serif text-[11px] leading-snug max-w-4xl mx-auto">
+      <div id="print-ia" className="hidden print:block font-serif text-[11px] leading-snug max-w-4xl mx-auto bg-white p-8">
         <div className="text-center mb-6">
           <h1 className="text-lg font-bold uppercase">INFORMATIVA SULL'UTILIZZO DI SISTEMI DI INTELLIGENZA ARTIFICIALE</h1>
           <p className="text-sm">(Ai sensi dell'art. 13 della Legge 23 settembre 2025, n. 132)</p>

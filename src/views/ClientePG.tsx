@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Factory, Save, RefreshCw } from 'lucide-react';
+import { Factory, Save, RefreshCw, Printer } from 'lucide-react';
 import { Cliente, Studio, AppState } from '../store';
 
 export default function ClientePG({ addCliente, setView, studio, currentClienteId, state }: { addCliente: (c: Cliente) => void, setView: (v: string) => void, studio: Studio, currentClienteId?: string | null, state?: AppState }) {
@@ -23,9 +23,11 @@ export default function ClientePG({ addCliente, setView, studio, currentClienteI
     }
   }, [currentClienteId, state]);
 
+  const [preview, setPreview] = useState(false);
+
   const handleChange = (e: any) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formData.nome) return alert('Inserire la denominazione');
     
     let clienteId = currentClienteId;
@@ -52,13 +54,22 @@ export default function ClientePG({ addCliente, setView, studio, currentClienteI
     }
     
     localStorage.setItem(`cliente_pg_${clienteId}`, JSON.stringify(formData));
-    alert('Scheda Identificazione salvata con successo!');
+    
+    try {
+      const { saveGeneratedDocument } = await import('../utils/fs');
+      await saveGeneratedDocument(formData.numeroCliente, 'Scheda_Identificazione', 'print-scheda-pg');
+      alert('Scheda Identificazione salvata con successo nel fascicolo e nella cartella locale!');
+    } catch (err) {
+      console.error(err);
+      alert('Dati salvati, ma impossibile generare il file PDF nella cartella locale.');
+    }
+    
     setView('fascicolo');
   };
 
   return (
-    <div className="animate-in fade-in duration-300">
-      <div className="mb-7 flex items-start justify-between border-b-2 border-warm-gray pb-5">
+    <div className="animate-in fade-in duration-300 print:m-0 print:p-0">
+      <div className="mb-7 flex items-start justify-between border-b-2 border-warm-gray pb-5 print:hidden">
         <div>
           <h2 className="font-serif text-3xl font-semibold text-navy">Scheda Identificazione Soggetto Collettivo</h2>
           <p className="mt-1.5 text-sm text-slate-500">Società, Ente, Trust o struttura analoga — Art. 18 D.Lgs. 231/2007</p>
@@ -67,12 +78,12 @@ export default function ClientePG({ addCliente, setView, studio, currentClienteI
           {currentClienteId && (
             <button className="btn btn-secondary" onClick={() => setView('fascicolo')}>Torna al Fascicolo</button>
           )}
-          <button className="btn btn-secondary" onClick={() => setFormData({ numeroCliente: String(Math.floor(Math.random() * 90000) + 10000) })}><RefreshCw size={16} /> Nuovo</button>
+          <button className="btn btn-secondary" onClick={() => window.print()}><Printer size={16} /> Stampa</button>
           <button className="btn btn-gold" onClick={handleSave}><Save size={16} /> Salva Cliente</button>
         </div>
       </div>
 
-      <div className="card">
+      <div className="card print:hidden">
         <div className="card-title"><div className="ct-icon"><Factory size={18} /></div> Dati Soggetto</div>
         <div className="grid grid-cols-2 gap-4">
           <div>
@@ -133,6 +144,85 @@ export default function ClientePG({ addCliente, setView, studio, currentClienteI
           <div>
             <label className="form-label">Data Inizio Rapporto</label>
             <input name="dataInizio" type="date" value={formData.dataInizio || ''} onChange={handleChange} className="form-input" />
+          </div>
+        </div>
+        <button className="btn btn-gold mt-6 w-full justify-center" onClick={() => setPreview(true)}>📄 Genera Anteprima Scheda</button>
+      </div>
+
+      {/* Print Preview Area */}
+      <div id="print-scheda-pg" className={`bg-white p-8 shadow-lg print:shadow-none print:p-0 ${preview ? 'block' : 'hidden print:block'}`}>
+        <div className="text-center mb-6">
+          <h1 className="text-xl font-bold text-red-600 uppercase">SCHEDA PER L'IDENTIFICAZIONE DEL CLIENTE PER FINI ANTIRICICLAGGIO</h1>
+        </div>
+
+        <h2 className="text-red-600 font-bold mb-2">Dati dello studio</h2>
+        <table className="w-full border-collapse border border-black text-sm mb-6">
+          <tbody>
+            <tr>
+              <td className="border border-black p-2 bg-gray-200 w-1/3">denominazione</td>
+              <td className="border border-black p-2">{studio.denominazione || 'Studio Novanzi SRL'}</td>
+            </tr>
+            <tr>
+              <td className="border border-black p-2 bg-gray-200">città</td>
+              <td className="border border-black p-2">{studio.citta || 'Prato'}</td>
+            </tr>
+            <tr>
+              <td className="border border-black p-2 bg-gray-200">Partita IVA</td>
+              <td className="border border-black p-2">{studio.piva || '02539510970'}</td>
+            </tr>
+            <tr>
+              <td className="border border-black p-2 bg-gray-200">CF</td>
+              <td className="border border-black p-2">{studio.cf || '02539510970'}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h2 className="text-red-600 font-bold mb-2">Dati del cliente (Soggetto Collettivo)</h2>
+        <table className="w-full border-collapse border border-black text-sm mb-6">
+          <tbody>
+            <tr>
+              <td className="border border-black p-2 bg-gray-200 w-1/3">Denominazione</td>
+              <td className="border border-black p-2 uppercase" colSpan={3}>{formData.nome}</td>
+            </tr>
+            <tr>
+              <td className="border border-black p-2 bg-gray-200">Natura Giuridica</td>
+              <td className="border border-black p-2" colSpan={3}>{formData.natura}</td>
+            </tr>
+            <tr>
+              <td className="border border-black p-2 bg-gray-200">Codice Fiscale</td>
+              <td className="border border-black p-2 uppercase">{formData.cf}</td>
+              <td className="border border-black p-2 bg-gray-200">Partita IVA</td>
+              <td className="border border-black p-2 uppercase">{formData.piva}</td>
+            </tr>
+            <tr>
+              <td className="border border-black p-2 bg-gray-200">Data Costituzione</td>
+              <td className="border border-black p-2" colSpan={3}>{formData.dataCostituzione ? new Date(formData.dataCostituzione).toLocaleDateString('it-IT') : ''}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h2 className="text-red-600 font-bold mb-2">Prestazione Professionale</h2>
+        <table className="w-full border-collapse border border-black text-sm mb-6">
+          <tbody>
+            <tr>
+              <td className="border border-black p-2 bg-gray-200 w-1/3">Tipo Prestazione</td>
+              <td className="border border-black p-2 uppercase">{formData.prestazione}</td>
+            </tr>
+            <tr>
+              <td className="border border-black p-2 bg-gray-200">Data Inizio Rapporto</td>
+              <td className="border border-black p-2">{formData.dataInizio ? new Date(formData.dataInizio).toLocaleDateString('it-IT') : ''}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div className="mt-12 flex justify-between">
+          <div className="text-center">
+            <p className="mb-8">Luogo e Data</p>
+            <p className="border-b border-black w-48 mx-auto"></p>
+          </div>
+          <div className="text-center">
+            <p className="mb-8">Firma del Professionista</p>
+            <p className="border-b border-black w-48 mx-auto"></p>
           </div>
         </div>
       </div>
